@@ -10,7 +10,7 @@ const html = `<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#9e2b2b">
+<meta name="theme-color" content="#0b1016">
 <title>短线单</title>
 <style>
 ${css}

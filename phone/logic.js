@@ -133,7 +133,7 @@
     return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
   }
 
-  function choose(spots, closesByCode, breadth) {
+  function choose(spots, closesByCode, breadth, options) {
     if (!spots.length) throw new Error("没有可用的主板行情");
     const up = breadth.up;
     const down = breadth.down;
@@ -145,6 +145,7 @@
       if (!closes) continue;
       const plan = buildPlan(spot, closes, hostile);
       if (!plan) continue;
+      if (options && options.onlyNow && plan.action !== "now") continue;
       plan.chance = chance(plan, spot, medianPct);
       plan.prior_closes = closes.slice(0, -1);
       plan.last_close = closes[closes.length - 1];
@@ -152,7 +153,7 @@
       ranked.push([score(plan, spot, medianPct, hostile), plan]);
     }
     ranked.sort((a, b) => b[0] - a[0]);
-    if (!ranked.length) throw new Error("今天没有符合短线条件的主板股票");
+    if (!ranked.length) throw new Error(options && options.onlyNow ? "no-now" : "今天没有符合短线条件的主板股票");
     const summary = hostile
       ? `成交靠前的主板里，上涨 ${up} 家、下跌 ${down} 家。跌得多，每支只做很小一笔。`
       : `成交靠前的主板里，上涨 ${up} 家、下跌 ${down} 家。`;
@@ -168,22 +169,30 @@
     };
   }
 
-  function passesSpot(row) {
+  function passesSpot(row, range) {
     if (!isRegularAccount(row.code, row.name)) return false;
-    if (!(row.price >= 3) || !(row.amount >= 3e8)) return false;
+    const floor = range && range.min != null ? range.min : 3;
+    if (!(row.price >= floor) || !(row.amount >= 3e8)) return false;
+    if (range && range.max != null && row.price > range.max) return false;
     if (row.pct < -4 || row.pct > 5) return false;
     if (row.turnover < 0.5 || row.turnover > 20) return false;
     if (row.amplitude > 13) return false;
     return true;
   }
 
-  function shortlist(spots) {
+  function shortlist(spots, options) {
     if (!spots.length) return [];
+    const onlyNow = !!(options && options.onlyNow);
     const mid = median(spots.map((item) => item.pct));
     return spots
       .slice()
-      .sort((a, b) => rank(b, mid) - rank(a, mid))
-      .slice(0, 36);
+      .sort((a, b) => onlyNow ? nearLow(b) - nearLow(a) : rank(b, mid) - rank(a, mid))
+      .slice(0, onlyNow ? 48 : 36);
+  }
+
+  function nearLow(item) {
+    const bounce = item.low > 0 ? (item.price - item.low) / item.low : 1;
+    return -bounce + Math.min(item.amount / 1e9, 3) * 0.01;
   }
 
   function rank(item, mid) {

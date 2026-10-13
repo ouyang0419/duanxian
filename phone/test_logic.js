@@ -23,6 +23,11 @@ assert(Slip.isRegularAccount("002156", "通富微电"), "main board");
 assert(!Slip.isRegularAccount("688981", "中芯国际"), "star");
 assert(!Slip.isRegularAccount("300750", "宁德时代"), "chinext");
 assert(!Slip.isRegularAccount("002630", "*ST华西"), "st");
+assert(Slip.passesSpot(spot({ price: 18 }), { min: 10, max: 30 }), "price inside");
+assert(!Slip.passesSpot(spot({ price: 53.4 }), { min: 10, max: 30 }), "price outside");
+assert(Slip.passesSpot(spot({ price: 8 }), { max: 10 }), "open floor stays at 3");
+assert(!Slip.passesSpot(spot({ price: 2.5 }), { max: 10 }), "cheap names stay out");
+assert(Slip.passesSpot(spot({ price: 2.5 }), { min: 1, max: 10 }), "typed minimum is kept");
 
 const pnl = Slip.lotPnl(50, 52, 49);
 assert(pnl.lot_cost === 5000, "cost");
@@ -52,6 +57,26 @@ assert(result.picks.length === 1 || result.picks.length === 2, "top list");
 assert(result.picks.length <= 10, "cap");
 assert(result.market.hostile === true, "hostile");
 assert(result.picks[0].chance >= 18 && result.picks[0].chance <= 76, "chance range");
+
+const ready = spot({
+  code: "600026",
+  name: "中远海能",
+  price: 52,
+  pct: 0.2,
+  low: 51,
+  high: 52.2,
+  open: 51.3,
+});
+const readyCloses = [53, 52.8, 52.6, 52.5, 52.4, 52.4, 52.3, 52.3, 52.2, 52.2];
+const readyPlan = Slip.buildPlan(ready, readyCloses, false);
+assert(readyPlan && readyPlan.action === "now", "enter now");
+const onlyNow = Slip.choose(
+  [spot(), ready],
+  { "002156": closes, "600026": readyCloses },
+  { up: 1200, down: 900, medianPct: 0.1 },
+  { onlyNow: true },
+);
+assert(onlyNow.picks.length === 1 && onlyNow.picks[0].action === "now", "only names you can enter");
 
 const ordered = Slip.sortPicks(
   [

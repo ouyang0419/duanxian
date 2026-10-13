@@ -1,0 +1,10 @@
+{
+  "name": "duanxian",
+  "private": true,
+  "description": "普通账户沪深主板短线名单，手机安装后自己拉行情。",
+  "scripts": {
+    "test": "node phone/test_logic.js",
+    "build:page": "node phone/build.js",
+    "build:apk": "python android/build_apk.py"
+  }
+}

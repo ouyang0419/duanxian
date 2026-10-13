@@ -1,0 +1,11 @@
+android/build/
+android/assets/
+android/debug.keystore
+android/res/drawable/ic_launcher.png
+phone/短线单.html
+短线单.apk
+*.apk.idsig
+data/
+__pycache__/
+*.pyc
+.DS_Store
